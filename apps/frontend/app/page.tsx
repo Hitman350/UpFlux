@@ -1,8 +1,11 @@
 "use client"
 import { CheckCircle, Activity, Shield, Zap, Clock, Globe, ArrowRight, BarChart3, Bell } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 function App() {
+  const router = useRouter();
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <nav className="fixed top-0 w-full bg-gray-950/80 backdrop-blur-lg border-b border-gray-800 z-50">
@@ -38,7 +41,7 @@ function App() {
                   Start Free Trial
                   <ArrowRight className="w-5 h-5" />
                 </button>
-                <button className="px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-lg font-semibold transition-all border border-gray-700">
+                <button onClick={() => router.push("/dashboard")} className="px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-lg font-semibold transition-all border border-gray-700">
                   View Demo
                 </button>
               </div>
@@ -62,9 +65,9 @@ function App() {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-cyan-500 blur-3xl opacity-20"></div>
               <div className="relative rounded-2xl border border-gray-800 overflow-hidden shadow-2xl h-96">
-                <Image 
-                  src="/hero-monitoring.png" 
-                  alt="Infrastructure monitoring" 
+                <Image
+                  src="/hero-monitoring.png"
+                  alt="Infrastructure monitoring"
                   width={800}
                   height={400}
                   className="w-full h-full object-cover"

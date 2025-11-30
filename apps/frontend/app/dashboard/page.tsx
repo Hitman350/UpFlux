@@ -252,7 +252,7 @@ function App() {
               url,
             }, {
               headers: {
-                Authorization: `Bearer ${token}`,
+                Authorization: token,
               },
             });
             await refreshWebsites();

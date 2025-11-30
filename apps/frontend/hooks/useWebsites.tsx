@@ -20,7 +20,7 @@ export function useWebsites() {
     const [websites, setWebsites] = useState<Website[]>([]);
     const [error, setError] = useState<string | null>(null);
 
-    const refreshWebsites = useCallback(async () => {    
+    const refreshWebsites = useCallback(async () => {
         try {
             const token = await getToken();
             if (!token) {
@@ -32,7 +32,7 @@ export function useWebsites() {
             console.log("Fetching websites from:", `${API_BACKEND_URL}/api/v1/websites`);
             const response = await axios.get(`${API_BACKEND_URL}/api/v1/websites`, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    Authorization: token,
                 },
                 timeout: 10000, // 10 second timeout
             });
@@ -43,7 +43,7 @@ export function useWebsites() {
             console.error("Error fetching websites:", err);
             if (axios.isAxiosError(err)) {
                 // Check for network/connection errors
-                if (err.code === 'ECONNREFUSED' || 
+                if (err.code === 'ECONNREFUSED' ||
                     err.code === 'ERR_NETWORK' ||
                     err.message === 'Network Error' ||
                     err.message?.includes('Network Error') ||
