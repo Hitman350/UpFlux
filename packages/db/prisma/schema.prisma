@@ -29,11 +29,12 @@ model Website {
 }
 
 model Validator {
-  id        String        @id @default(uuid())
-  publicKey String
-  location  String
-  ipAddress String
-  ticks     WebsiteTick[] // One validator will have many ticks (one to many relations)
+  id             String        @id @default(uuid())
+  publicKey      String
+  location       String
+  ipAddress      String
+  pendingPayouts Int           @default(0)
+  ticks          WebsiteTick[] // One validator will have many ticks (one to many relations)
 }
 
 model WebsiteTick {
