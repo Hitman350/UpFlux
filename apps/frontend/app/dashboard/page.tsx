@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, Globe, Plus, Moon, Sun } from 'lucide-react';
+import { ChevronDown, ChevronUp, Globe, Plus, Moon, Sun, Trash2 } from 'lucide-react';
 import { useWebsites } from '@/hooks/useWebsites';
 import axios from 'axios';
 import { API_BACKEND_URL } from '@/config';
@@ -78,7 +78,7 @@ interface ProcessedWebsite {
   uptimeTicks: UptimeStatus[];
 }
 
-function WebsiteCard({ website }: { website: ProcessedWebsite }) {
+function WebsiteCard({ website, onDelete }: { website: ProcessedWebsite; onDelete: (id: string) => void }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -97,6 +97,17 @@ function WebsiteCard({ website }: { website: ProcessedWebsite }) {
           <span className="text-sm text-gray-600 dark:text-gray-300">
             {website.uptimePercentage.toFixed(1)}% uptime
           </span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (confirm('Are you sure you want to delete this website?')) {
+                onDelete(website.id);
+              }
+            }}
+            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
           {isExpanded ? (
             <ChevronUp className="w-5 h-5 text-gray-400 dark:text-gray-500" />
           ) : (
@@ -121,7 +132,7 @@ function WebsiteCard({ website }: { website: ProcessedWebsite }) {
 }
 
 function App() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { websites, refreshWebsites, error } = useWebsites();
   const { getToken } = useAuth();
@@ -189,6 +200,33 @@ function App() {
     }
   }, [isDarkMode]);
 
+  // Force scroll to top on mount
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  const handleDelete = async (websiteId: string) => {
+    try {
+      const token = await getToken();
+      if (!token) {
+        alert("Authentication token not available.");
+        return;
+      }
+
+      await axios.delete(`${API_BACKEND_URL}/api/v1/website/`, {
+        data: { websiteId },
+        headers: {
+          Authorization: token,
+        },
+      });
+
+      await refreshWebsites();
+    } catch (err) {
+      console.error("Error deleting website:", err);
+      alert("Failed to delete website");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       <div className="max-w-4xl mx-auto py-8 px-4">
@@ -226,7 +264,11 @@ function App() {
 
         <div className="space-y-4">
           {processedWebsites.map((website) => (
-            <WebsiteCard key={website.id} website={website} />
+            <WebsiteCard
+              key={website.id}
+              website={website}
+              onDelete={handleDelete}
+            />
           ))}
         </div>
       </div>

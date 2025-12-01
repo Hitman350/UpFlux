@@ -8,22 +8,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      <nav className="fixed top-0 w-full bg-gray-950/80 backdrop-blur-lg border-b border-gray-800 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Activity className="w-8 h-8 text-emerald-400" strokeWidth={2.5} />
-            <span className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">UpFlux</span>
-          </div>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-gray-300 hover:text-white transition-colors">Features</a>
-            <a href="#pricing" className="text-gray-300 hover:text-white transition-colors">Pricing</a>
-            <a href="#about" className="text-gray-300 hover:text-white transition-colors">About</a>
-            <button className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-medium transition-all hover:scale-105">Get Started</button>
-          </div>
-        </div>
-      </nav>
-
-      <section className="pt-32 pb-20 px-6">
+      <section className="pt-8 pb-20 px-6">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
@@ -37,8 +22,8 @@ function App() {
                 Real-time uptime monitoring for your websites, APIs, and services. Get instant alerts when something goes wrong and keep your business running smoothly.
               </p>
               <div className="flex flex-wrap gap-4">
-                <button className="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2">
-                  Start Free Trial
+                <button onClick={() => router.push("/dashboard")} className="px-8 py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-semibold transition-all hover:scale-105 flex items-center gap-2">
+                  Start Monitoring
                   <ArrowRight className="w-5 h-5" />
                 </button>
                 <button onClick={() => router.push("/dashboard")} className="px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-lg font-semibold transition-all border border-gray-700">
@@ -168,8 +153,8 @@ function App() {
                   <span className="text-5xl font-bold">${plan.price}</span>
                   <span className="text-gray-400">/month</span>
                 </div>
-                <button className={`w-full py-3 rounded-lg font-semibold transition-all ${plan.popular ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-gray-800 hover:bg-gray-700'}`}>
-                  Start Free Trial
+                <button onClick={() => router.push("/dashboard")} className={`w-full py-3 rounded-lg font-semibold transition-all ${plan.popular ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-gray-800 hover:bg-gray-700'}`}>
+                  Start Monitoring
                 </button>
                 <ul className="mt-8 space-y-3">
                   {plan.features.map((feature, j) => (
@@ -189,8 +174,8 @@ function App() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold mb-6">Ready to Get Started?</h2>
           <p className="text-xl text-gray-400 mb-8">Join thousands of companies monitoring their infrastructure with UpFlux. Start your free trial today.</p>
-          <button className="px-10 py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-semibold text-lg transition-all hover:scale-105 flex items-center gap-2 mx-auto">
-            Start Your Free Trial
+          <button onClick={() => router.push("/dashboard")} className="px-10 py-4 bg-emerald-500 hover:bg-emerald-600 rounded-lg font-semibold text-lg transition-all hover:scale-105 flex items-center gap-2 mx-auto">
+            Start Monitoring
             <ArrowRight className="w-5 h-5" />
           </button>
           <p className="text-sm text-gray-500 mt-4">No credit card required • 14-day free trial • Cancel anytime</p>
