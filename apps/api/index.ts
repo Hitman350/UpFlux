@@ -92,4 +92,37 @@ app.delete("/api/v1/website/", authMiddleware, async (req, res) => {
   });
 }); // This will delete a website from the existing list
 
+app.put("/api/v1/website/pause", authMiddleware, async (req, res) => {
+  const websiteId = req.body.websiteId;
+  const userId = req.userId;
+
+  const website = await prismaClient.website.findFirst({
+    where: {
+      id: websiteId,
+      userId,
+      disabled: false,
+    },
+  });
+
+  if (!website) {
+    res.status(404).json({ error: "Website not found" });
+    return;
+  }
+
+  const updated = await prismaClient.website.update({
+    where: {
+      id: websiteId,
+      userId,
+    },
+    data: {
+      paused: !website.paused,
+    },
+  });
+
+  res.json({
+    message: updated.paused ? "Website paused" : "Website resumed",
+    paused: updated.paused,
+  });
+}); // This will toggle pause/resume on a website
+
 app.listen(8080);

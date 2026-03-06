@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback } from "react";
 interface Website {
     id: string;
     url: string;
+    paused: boolean;
     ticks: {
         id: string;
         createdAt: string;
@@ -18,6 +19,7 @@ interface Website {
 export function useWebsites() {
     const { getToken } = useAuth();
     const [websites, setWebsites] = useState<Website[]>([]);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const refreshWebsites = useCallback(async () => {
@@ -26,23 +28,21 @@ export function useWebsites() {
             if (!token) {
                 console.error("No token available");
                 setError("Authentication token not available");
+                setLoading(false);
                 return;
             }
             setError(null);
-            console.log("Fetching websites from:", `${API_BACKEND_URL}/api/v1/websites`);
             const response = await axios.get(`${API_BACKEND_URL}/api/v1/websites`, {
                 headers: {
                     Authorization: token,
                 },
-                timeout: 10000, // 10 second timeout
+                timeout: 10000,
             });
 
-            console.log("Websites fetched successfully:", response.data);
             setWebsites(response.data.websites);
         } catch (err) {
             console.error("Error fetching websites:", err);
             if (axios.isAxiosError(err)) {
-                // Check for network/connection errors
                 if (err.code === 'ECONNREFUSED' ||
                     err.code === 'ERR_NETWORK' ||
                     err.message === 'Network Error' ||
@@ -57,6 +57,8 @@ export function useWebsites() {
             } else {
                 setError("An unexpected error occurred");
             }
+        } finally {
+            setLoading(false);
         }
     }, [getToken]);
 
@@ -70,6 +72,6 @@ export function useWebsites() {
         return () => clearInterval(interval);
     }, [refreshWebsites]);
 
-    return { websites, refreshWebsites, error };
+    return { websites, refreshWebsites, loading, error };
 
 }

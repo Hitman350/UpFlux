@@ -116,6 +116,7 @@ setInterval(async () => {
     const websitesToMonitor = await prismaClient.website.findMany({
         where: {
             disabled: false,
+            paused: false,
         },
     });
 

@@ -1,209 +1,143 @@
 "use client";
-import React, { useState, useMemo } from 'react';
-import { ChevronDown, ChevronUp, Globe, Plus, Moon, Sun, Trash2 } from 'lucide-react';
-import { useWebsites } from '@/hooks/useWebsites';
-import axios from 'axios';
-import { API_BACKEND_URL } from '@/config';
-import { useAuth } from '@clerk/nextjs';
+
+import React, { useState, useMemo } from "react";
+import { Plus, RefreshCw } from "lucide-react";
+import { useWebsites } from "@/hooks/useWebsites";
+import axios from "axios";
+import { API_BACKEND_URL } from "@/config";
+import { useAuth } from "@clerk/nextjs";
+
+import { DashboardStats } from "@/components/DashboardStats";
+import { WebsiteCard, type ProcessedWebsite } from "@/components/WebsiteCard";
+import { AddWebsiteModal } from "@/components/AddWebsiteModal";
+import { EmptyState } from "@/components/EmptyState";
 
 type UptimeStatus = "good" | "bad" | "unknown";
 
-function StatusCircle({ status }: { status: UptimeStatus }) {
+function LoadingSkeleton() {
   return (
-    <div className={`w-3 h-3 rounded-full ${status === 'good' ? 'bg-green-500' : status === 'bad' ? 'bg-red-500' : 'bg-gray-500'}`} />
-  );
-}
-
-function UptimeTicks({ ticks }: { ticks: UptimeStatus[] }) {
-  return (
-    <div className="flex gap-1 mt-2">
-      {ticks.map((tick, index) => (
-        <div
-          key={index}
-          className={`w-8 h-2 rounded ${tick === 'good' ? 'bg-green-500' : tick === 'bad' ? 'bg-red-500' : 'bg-gray-500'
-            }`}
-        />
+    <div className="space-y-6 animate-fade-in">
+      {/* Stats skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="glass-surface rounded-xl p-5 h-20">
+            <div className="h-3 w-20 bg-white/5 rounded animate-shimmer mb-3" />
+            <div className="h-6 w-16 bg-white/5 rounded animate-shimmer" />
+          </div>
+        ))}
+      </div>
+      {/* Card skeletons */}
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="glass-surface rounded-xl p-5 h-20">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-white/5 animate-shimmer" />
+            <div className="h-4 w-48 bg-white/5 rounded animate-shimmer" />
+          </div>
+        </div>
       ))}
     </div>
   );
 }
 
-function CreateWebsiteModal({ isOpen, onClose }: { isOpen: boolean; onClose: (url: string | null) => void }) {
-  const [url, setUrl] = useState('');
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-        <h2 className="text-xl font-semibold mb-4 dark:text-white">Add New Website</h2>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            URL
-          </label>
-          <input
-            type="url"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-            placeholder="https://example.com"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-          />
-        </div>
-        <div className="flex justify-end space-x-3 mt-6">
-          <button
-            type="button"
-            onClick={() => onClose(null)}
-            className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            onClick={() => onClose(url)}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md"
-          >
-            Add Website
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface ProcessedWebsite {
-  id: string;
-  url: string;
-  status: UptimeStatus;
-  uptimePercentage: number;
-  lastChecked: string;
-  uptimeTicks: UptimeStatus[];
-}
-
-function WebsiteCard({ website, onDelete }: { website: ProcessedWebsite; onDelete: (id: string) => void }) {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-      <div
-        className="p-4 cursor-pointer flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="flex items-center space-x-4">
-          <StatusCircle status={website.status} />
-          <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">{website.url}</h3>
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          <span className="text-sm text-gray-600 dark:text-gray-300">
-            {website.uptimePercentage.toFixed(1)}% uptime
-          </span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (confirm('Are you sure you want to delete this website?')) {
-                onDelete(website.id);
-              }
-            }}
-            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
-          {isExpanded ? (
-            <ChevronUp className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-          ) : (
-            <ChevronDown className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-          )}
-        </div>
-      </div>
-
-      {isExpanded && (
-        <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-700">
-          <div className="mt-3">
-            <p className="text-sm text-gray-600 dark:text-gray-300 mb-1">Last 30 minutes status:</p>
-            <UptimeTicks ticks={website.uptimeTicks} />
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-            Last checked: {website.lastChecked}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function App() {
-  const [isDarkMode, setIsDarkMode] = useState(true);
+export default function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { websites, refreshWebsites, error } = useWebsites();
+  const { websites, refreshWebsites, loading, error } = useWebsites();
   const { getToken } = useAuth();
 
-  const processedWebsites = useMemo(() => {
-    return websites.map(website => {
-      // Sort ticks by creation time
-      const sortedTicks = [...website.ticks].sort((a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  const processedWebsites = useMemo<ProcessedWebsite[]>(() => {
+    return websites.map((website) => {
+      const sortedTicks = [...website.ticks].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
-      // Get the most recent 30 minutes of ticks
-      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-      const recentTicks = sortedTicks.filter(tick =>
-        new Date(tick.createdAt) > thirtyMinutesAgo
+      const now = Date.now();
+      const snappedNow =
+        Math.floor(now / (3 * 60 * 1000)) * (3 * 60 * 1000);
+      const thirtyMinutesAgo = new Date(snappedNow - 30 * 60 * 1000);
+      const recentTicks = sortedTicks.filter(
+        (tick) => new Date(tick.createdAt) > thirtyMinutesAgo
       );
 
-      // Aggregate ticks into 3-minute windows (10 windows total)
+      // Aggregate into 3-minute windows
       const windows: UptimeStatus[] = [];
-
       for (let i = 0; i < 10; i++) {
-        const windowStart = new Date(Date.now() - (i + 1) * 3 * 60 * 1000);
-        const windowEnd = new Date(Date.now() - i * 3 * 60 * 1000);
+        const windowStart = new Date(snappedNow - (i + 1) * 3 * 60 * 1000);
+        const windowEnd = new Date(snappedNow - i * 3 * 60 * 1000);
 
-        const windowTicks = recentTicks.filter(tick => {
+        const windowTicks = recentTicks.filter((tick) => {
           const tickTime = new Date(tick.createdAt);
           return tickTime >= windowStart && tickTime < windowEnd;
         });
 
-        // Window is considered up if majority of ticks are up
-        const upTicks = windowTicks.filter(tick => tick.status === 'Good').length;
-        windows[9 - i] = windowTicks.length === 0 ? "unknown" : (upTicks / windowTicks.length) >= 0.5 ? "good" : "bad";
+        const upTicks = windowTicks.filter(
+          (tick) => tick.status === "Good"
+        ).length;
+        windows[9 - i] =
+          windowTicks.length === 0
+            ? "unknown"
+            : upTicks / windowTicks.length > 0.5
+              ? "good"
+              : "bad";
       }
 
-      // Calculate overall status and uptime percentage
       const totalTicks = sortedTicks.length;
-      const upTicks = sortedTicks.filter(tick => tick.status === 'Good').length;
-      const uptimePercentage = totalTicks === 0 ? 100 : (upTicks / totalTicks) * 100;
+      const upTicks = sortedTicks.filter(
+        (tick) => tick.status === "Good"
+      ).length;
+      const uptimePercentage =
+        totalTicks === 0 ? 100 : (upTicks / totalTicks) * 100;
 
-      // Get the most recent status
       const currentStatus = windows[windows.length - 1];
 
-      // Format the last checked time
       const lastChecked = sortedTicks[0]
-        ? new Date(sortedTicks[0].createdAt).toLocaleTimeString()
-        : 'Never';
+        ? new Date(sortedTicks[0].createdAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+        : "Never";
+
+      // Calculate average latency from recent good ticks
+      const goodRecentTicks = recentTicks.filter((t) => t.status === "Good");
+      const avgLatency =
+        goodRecentTicks.length > 0
+          ? Math.round(
+            goodRecentTicks.reduce((sum, t) => sum + t.latency, 0) /
+            goodRecentTicks.length
+          )
+          : 0;
 
       return {
         id: website.id,
         url: website.url,
+        paused: website.paused,
         status: currentStatus,
         uptimePercentage,
         lastChecked,
         uptimeTicks: windows,
+        avgLatency,
       };
     });
   }, [websites]);
 
-  // Toggle dark mode
-  React.useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
+  // Compute dashboard stats
+  const stats = useMemo(() => {
+    const active = processedWebsites.filter((w) => !w.paused);
+    const paused = processedWebsites.filter((w) => w.paused);
+    const avgUptime =
+      active.length > 0
+        ? active.reduce((sum, w) => sum + w.uptimePercentage, 0) /
+        active.length
+        : 100;
+    const issues = active.filter((w) => w.status === "bad").length;
 
-  // Force scroll to top on mount
-  React.useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+    return {
+      totalMonitored: active.length,
+      averageUptime: avgUptime,
+      issueCount: issues,
+      pausedCount: paused.length,
+    };
+  }, [processedWebsites]);
 
   const handleDelete = async (websiteId: string) => {
     try {
@@ -212,14 +146,10 @@ function App() {
         alert("Authentication token not available.");
         return;
       }
-
       await axios.delete(`${API_BACKEND_URL}/api/v1/website/`, {
         data: { websiteId },
-        headers: {
-          Authorization: token,
-        },
+        headers: { Authorization: token },
       });
-
       await refreshWebsites();
     } catch (err) {
       console.error("Error deleting website:", err);
@@ -227,84 +157,139 @@ function App() {
     }
   };
 
+  const handlePause = async (websiteId: string) => {
+    try {
+      const token = await getToken();
+      if (!token) {
+        alert("Authentication token not available.");
+        return;
+      }
+      await axios.put(
+        `${API_BACKEND_URL}/api/v1/website/pause`,
+        { websiteId },
+        { headers: { Authorization: token } }
+      );
+      await refreshWebsites();
+    } catch (err) {
+      console.error("Error toggling pause:", err);
+      alert("Failed to toggle pause");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-      <div className="max-w-4xl mx-auto py-8 px-4">
+    <div className="min-h-screen bg-slate-950">
+      {/* Gradient background accents */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative max-w-5xl mx-auto pt-24 pb-8 px-4 sm:px-6">
+        {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center space-x-2">
-            <Globe className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Uptime Monitor</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-white">
+              Monitoring Dashboard
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Track website uptime and performance in real-time
+            </p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+              onClick={() => refreshWebsites()}
+              className="p-2.5 rounded-xl glass-surface text-slate-400 hover:text-emerald-400 hover:border-emerald-500/20 transition-all duration-200"
+              title="Refresh"
             >
-              {isDarkMode ? (
-                <Sun className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-              ) : (
-                <Moon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-              )}
+              <RefreshCw className="w-4 h-4" />
             </button>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
+              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold text-sm transition-all duration-200 hover:shadow-lg hover:shadow-emerald-500/25"
             >
               <Plus className="w-4 h-4" />
-              <span>Add Website</span>
+              <span className="hidden sm:inline">Add Website</span>
             </button>
           </div>
         </div>
 
+        {/* Error banner */}
         {error && (
-          <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-red-800 dark:text-red-200 text-sm">{error}</p>
+          <div className="mb-6 p-4 rounded-xl border border-red-500/20 bg-red-500/5 animate-slide-up">
+            <p className="text-red-400 text-sm">{error}</p>
           </div>
         )}
 
-        <div className="space-y-4">
-          {processedWebsites.map((website) => (
-            <WebsiteCard
-              key={website.id}
-              website={website}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
+        {/* Loading state */}
+        {loading && <LoadingSkeleton />}
+
+        {/* Content */}
+        {!loading && (
+          <>
+            {processedWebsites.length === 0 ? (
+              <EmptyState onAddWebsite={() => setIsModalOpen(true)} />
+            ) : (
+              <>
+                {/* Stats */}
+                <DashboardStats {...stats} />
+
+                {/* Website cards */}
+                <div className="space-y-3">
+                  {processedWebsites.map((website) => (
+                    <WebsiteCard
+                      key={website.id}
+                      website={website}
+                      onDelete={handleDelete}
+                      onPause={handlePause}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
       </div>
 
-      <CreateWebsiteModal
+      {/* Modal */}
+      <AddWebsiteModal
         isOpen={isModalOpen}
         onClose={async (url) => {
           if (url === null) {
             setIsModalOpen(false);
             return;
           }
-
           try {
             const token = await getToken();
             if (!token) {
-              console.error("No token available");
-              alert("Authentication token not available. Please try logging in again.");
+              alert(
+                "Authentication token not available. Please try logging in again."
+              );
               setIsModalOpen(false);
               return;
             }
             setIsModalOpen(false);
-            await axios.post(`${API_BACKEND_URL}/api/v1/website`, {
-              url,
-            }, {
-              headers: {
-                Authorization: token,
-              },
-            });
+            await axios.post(
+              `${API_BACKEND_URL}/api/v1/website`,
+              { url },
+              { headers: { Authorization: token } }
+            );
             await refreshWebsites();
           } catch (err) {
             console.error("Error adding website:", err);
             if (axios.isAxiosError(err)) {
-              if (err.code === 'ECONNREFUSED' || err.message === 'Network Error') {
-                alert("Cannot connect to API server. Please make sure the API server is running on port 8080.");
+              if (
+                err.code === "ECONNREFUSED" ||
+                err.message === "Network Error"
+              ) {
+                alert(
+                  "Cannot connect to API server. Please make sure the API server is running on port 8080."
+                );
               } else {
-                alert(err.response?.data?.message || err.message || "Failed to add website");
+                alert(
+                  err.response?.data?.message ||
+                  err.message ||
+                  "Failed to add website"
+                );
               }
             } else {
               alert("An unexpected error occurred");
@@ -315,5 +300,3 @@ function App() {
     </div>
   );
 }
-
-export default App;

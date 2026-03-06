@@ -10,27 +10,23 @@ const CALLBACKS: {[callbackId: string]: (data: SignupOutgoingMessage) => void} =
 
 let validatorId: string | null = null;
 
-async function main() {
-    const keypair = Keypair.fromSecretKey(
-        Uint8Array.from(JSON.parse(process.env.PRIVATE_KEY!))
-    );
-    const ws = new WebSocket("ws://localhost:8081");
+const HUB_URL = "ws://localhost:8081";
+const RECONNECT_INTERVAL = 5000; // 5 seconds
 
-    ws.on('message', async (data) => {
-        const messageStr = data.toString();
-        const message: OutgoingMessage = JSON.parse(messageStr);
-        if (message.type === 'signup') {
-            CALLBACKS[message.data.callbackId]?.(message.data)
-            delete CALLBACKS[message.data.callbackId];
-        } else if (message.type === 'validate') {
-            await validateHandler(ws, message.data, keypair);
-        }
-    });
+const keypair = Keypair.fromSecretKey(
+    Uint8Array.from(JSON.parse(process.env.PRIVATE_KEY!))
+);
+
+function connect() {
+    console.log(`[Validator] Connecting to Hub at ${HUB_URL}...`);
+    const ws = new WebSocket(HUB_URL);
 
     ws.on('open', async () => {
+        console.log(`[Validator] Connected to Hub!`);
         const callbackId = randomUUID();
         CALLBACKS[callbackId] = (data: SignupOutgoingMessage) => {
             validatorId = data.validatorId;
+            console.log(`[Validator] Registered with ID: ${validatorId}`);
         }
         const signedMessage = await signMessage(`Signed message for ${callbackId}, ${keypair.publicKey}`, keypair);
 
@@ -44,10 +40,31 @@ async function main() {
             },
         }));
     });
+
+    ws.on('message', async (data) => {
+        const messageStr = data.toString();
+        const message: OutgoingMessage = JSON.parse(messageStr);
+        if (message.type === 'signup') {
+            CALLBACKS[message.data.callbackId]?.(message.data)
+            delete CALLBACKS[message.data.callbackId];
+        } else if (message.type === 'validate') {
+            await validateHandler(ws, message.data, keypair);
+        }
+    });
+
+    ws.on('close', () => {
+        console.log(`[Validator] Disconnected from Hub. Reconnecting in ${RECONNECT_INTERVAL / 1000}s...`);
+        setTimeout(connect, RECONNECT_INTERVAL);
+    });
+
+    ws.on('error', (err) => {
+        console.error(`[Validator] WebSocket error:`, err.message);
+        // 'close' event will fire after this, triggering reconnect
+    });
 }
 
 async function validateHandler(ws: WebSocket, { url, callbackId, websiteId }: ValidateOutgoingMessage, keypair: Keypair) {
-    console.log(`Validating ${url}`);
+    console.log(`[Validator] Validating ${url}`);
     const startTime = Date.now();
     const signature = await signMessage(`Replying to ${callbackId}`, keypair);
 
@@ -57,8 +74,7 @@ async function validateHandler(ws: WebSocket, { url, callbackId, websiteId }: Va
         const latency = endTime - startTime;
         const status = response.status;
 
-        console.log(url);
-        console.log(status);
+        console.log(`[Validator] ${url} → ${status} (${latency}ms)`);
         ws.send(JSON.stringify({
             type: 'validate',
             data: {
@@ -71,6 +87,7 @@ async function validateHandler(ws: WebSocket, { url, callbackId, websiteId }: Va
             },
         }));
     } catch (error) {
+        console.error(`[Validator] Validation error for ${url}:`, (error as Error).message);
         ws.send(JSON.stringify({
             type: 'validate',
             data: {
@@ -82,7 +99,6 @@ async function validateHandler(ws: WebSocket, { url, callbackId, websiteId }: Va
                 signedMessage: signature,
             },
         }));
-        console.error(error);
     }
 }
 
@@ -93,8 +109,5 @@ async function signMessage(message: string, keypair: Keypair) {
     return JSON.stringify(Array.from(signature));
 }
 
-main();
-
-setInterval(async () => {
-
-}, 10000);
+// Start the validator with auto-reconnect
+connect();

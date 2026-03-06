@@ -26,6 +26,7 @@ model Website {
   userId   String
   ticks    WebsiteTick[] // One website will have many ticks (one to many relations)
   disabled Boolean       @default(false)
+  paused   Boolean       @default(false)
 }
 
 model Validator {
