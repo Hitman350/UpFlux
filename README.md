@@ -11,7 +11,7 @@
   <img src="https://img.shields.io/badge/Clerk-6C47FF?style=for-the-badge&logo=clerk&logoColor=white" />
 </p>
 
-<h1 align="center">⚡ UpFlux</h1>
+<h1 align="center"> UpFlux</h1>
 <p align="center">
   <strong>Decentralized Website Uptime Monitoring — Powered by Solana Validators</strong>
 </p>

@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useRef } from 'react';
-import { CheckCircle, Activity, Shield, Zap, Clock, Globe, ArrowRight, BarChart3, Bell, Layers, Eye, TrendingUp, Github, Twitter, Linkedin } from 'lucide-react';
+import { CheckCircle, Activity, Shield, Zap, Clock, Globe, ArrowRight, BarChart3, Bell, Layers, Eye, TrendingUp, Github, Twitter, Linkedin, Lock, Timer, Radio } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 /* ── Scroll-reveal hook ── */
@@ -179,12 +179,15 @@ function App() {
           {/* Stats row */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-20">
             {[
-              { value: '10M+', label: 'Checks Daily' },
-              { value: '5,000+', label: 'Happy Customers' },
-              { value: '99.99%', label: 'SLA Uptime' },
-              { value: '<50ms', label: 'Avg Response' },
+              { value: '1,440', label: 'Checks/Day/Monitor', icon: <BarChart3 className="w-4 h-4" />, accent: 'emerald' },
+              { value: 'Ed25519', label: 'Crypto Signatures', icon: <Lock className="w-4 h-4" />, accent: 'cyan' },
+              { value: '60s', label: 'Check Interval', icon: <Timer className="w-4 h-4" />, accent: 'purple' },
+              { value: 'Real-time', label: 'WebSocket Comms', icon: <Radio className="w-4 h-4" />, accent: 'amber' },
             ].map((stat, i) => (
-              <div key={i} className="glass-card p-5 text-center">
+              <div key={i} className={`stat-card stat-card--${stat.accent} glass-card p-5 text-center group`}>
+                <div className={`stat-icon-ring stat-icon-ring--${stat.accent} mx-auto mb-3`}>
+                  {stat.icon}
+                </div>
                 <div className="text-2xl md:text-3xl font-bold gradient-text">{stat.value}</div>
                 <div className="text-sm text-[#A1A1AA] mt-1">{stat.label}</div>
               </div>
@@ -314,8 +317,8 @@ function App() {
                 <button
                   onClick={() => router.push('/dashboard')}
                   className={`w-full py-3 rounded-xl font-semibold transition-all text-sm ${plan.popular
-                      ? 'btn-gradient text-white'
-                      : 'bg-white/5 hover:bg-white/10 border border-white/10 text-white'
+                    ? 'btn-gradient text-white'
+                    : 'bg-white/5 hover:bg-white/10 border border-white/10 text-white'
                     }`}
                 >
                   Start Free Trial
@@ -335,24 +338,27 @@ function App() {
         </div>
       </section>
 
-      {/* ═══════════ SOCIAL PROOF ═══════════ */}
+      {/* ═══════════ TECHNICAL SCALE ═══════════ */}
       <section className="py-20 px-6" ref={socialRef}>
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14 fade-up">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Trusted by <span className="gradient-text">Modern Teams</span>
+              Built for <span className="gradient-text">Scale & Integrity</span>
             </h2>
-            <p className="text-lg text-[#A1A1AA]">Teams around the world rely on UpFlux to keep their services running.</p>
+            <p className="text-lg text-[#A1A1AA]">Every validation tick is cryptographically signed, verified, and persisted — trustlessly.</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 fade-up stagger-1">
             {[
-              { value: '15+', label: 'Monitoring Regions' },
-              { value: '99.99%', label: 'Platform Uptime' },
-              { value: '500K+', label: 'Incidents Detected' },
-              { value: '<30s', label: 'Alert Delivery' },
+              { value: 'N×M', label: 'Validator Fan-out', icon: <Layers className="w-4 h-4" />, accent: 'emerald' },
+              { value: 'Atomic', label: 'DB Transactions', icon: <Shield className="w-4 h-4" />, accent: 'cyan' },
+              { value: '2', label: 'Sigs per Tick', icon: <Lock className="w-4 h-4" />, accent: 'purple' },
+              { value: '5s', label: 'Auto-Reconnect', icon: <Zap className="w-4 h-4" />, accent: 'amber' },
             ].map((stat, i) => (
-              <div key={i} className="glass-card p-5 text-center">
+              <div key={i} className={`stat-card stat-card--${stat.accent} glass-card p-5 text-center group`}>
+                <div className={`stat-icon-ring stat-icon-ring--${stat.accent} mx-auto mb-2`}>
+                  {stat.icon}
+                </div>
                 <div className="text-2xl font-bold gradient-text">{stat.value}</div>
                 <div className="text-xs text-[#A1A1AA] mt-1.5">{stat.label}</div>
               </div>
