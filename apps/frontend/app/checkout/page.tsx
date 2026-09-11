@@ -78,7 +78,7 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 selection:bg-emerald-500/30">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 pt-24 selection:bg-emerald-500/30">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-emerald-500/10 blur-[120px]" />
       </div>
