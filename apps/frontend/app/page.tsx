@@ -1,7 +1,9 @@
 "use client"
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CheckCircle, Activity, Shield, Zap, Clock, Globe, ArrowRight, BarChart3, Bell, Layers, Eye, TrendingUp, Github, Twitter, Linkedin, Lock, Timer, Radio } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useAuth, useUser } from '@clerk/nextjs';
+import axios from 'axios';
 
 /* ── Scroll-reveal hook ── */
 function useScrollReveal() {
@@ -101,6 +103,66 @@ function App() {
   const pricingRef = useScrollReveal();
   const socialRef = useScrollReveal();
   const ctaRef = useScrollReveal();
+  
+  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { user } = useUser();
+  const [loading, setLoading] = useState(false);
+  const [isPro, setIsPro] = useState(false);
+  const [fetchingStatus, setFetchingStatus] = useState(true);
+
+  useEffect(() => {
+    const fetchUserStatus = async () => {
+      if (isLoaded && isSignedIn) {
+        try {
+          const token = await getToken();
+          const res = await axios.get("http://localhost:8080/api/v1/user/me", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.data?.user?.plan === "PRO") {
+            setIsPro(true);
+          }
+        } catch (error) {
+          console.error("Failed to fetch user status", error);
+        }
+      }
+      setFetchingStatus(false);
+    };
+
+    fetchUserStatus();
+  }, [isLoaded, isSignedIn, getToken]);
+
+  const handleUpgrade = async () => {
+    if (!isLoaded) return;
+    if (!isSignedIn || !user) {
+      alert("Please sign in first. You can log in via the Dashboard button.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const token = await getToken();
+      const email = user.primaryEmailAddress?.emailAddress || "";
+
+      const response = await axios.post(
+        "http://localhost:8080/api/v1/subscription/create",
+        { email },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const clientSecret = response.data.clientSecret;
+      if (clientSecret) {
+        router.push(`/checkout?client_secret=${clientSecret}`);
+      } else {
+        alert("Could not initialize checkout.");
+        setLoading(false);
+      }
+    } catch (error: any) {
+      alert(
+        error.response?.data?.error || error.message || "Something went wrong"
+      );
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen page-bg text-white overflow-hidden">
@@ -269,63 +331,45 @@ function App() {
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Simple, <span className="gradient-text">Transparent Pricing</span>
             </h2>
-            <p className="text-lg text-[#A1A1AA]">Choose the plan that fits your needs. All plans include a 14-day free trial.</p>
+            <p className="text-lg text-[#A1A1AA]">Start with a 1-month free trial, then $10/month. Cancel anytime.</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {[
-              {
-                name: 'Starter',
-                price: '29',
-                description: 'Perfect for small projects',
-                features: ['10 Monitors', '5-minute checks', '3 Team members', 'Email alerts', 'Basic analytics'],
-              },
-              {
-                name: 'Professional',
-                price: '79',
-                description: 'For growing businesses',
-                features: ['50 Monitors', '1-minute checks', '10 Team members', 'All alert channels', 'Advanced analytics', 'API access'],
-                popular: true,
-              },
-              {
-                name: 'Enterprise',
-                price: '199',
-                description: 'For large organizations',
-                features: ['Unlimited Monitors', '30-second checks', 'Unlimited team members', 'Priority support', 'Custom integrations', 'SLA guarantee'],
-              },
-            ].map((plan, i) => (
+          <div className="flex justify-center">
               <div
-                key={i}
-                className={`fade-up stagger-${i + 1} glass-card p-8 relative ${plan.popular ? 'gradient-border lg:scale-105' : ''}`}
+                className="fade-up stagger-1 glass-card p-8 relative gradient-border max-w-sm w-full"
               >
-                {plan.popular && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                    <span className="btn-gradient px-4 py-1.5 rounded-full text-xs font-semibold text-white whitespace-nowrap">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                  <span className="btn-gradient px-4 py-1.5 rounded-full text-xs font-semibold text-white whitespace-nowrap">
+                    1 Month Free Trial
+                  </span>
+                </div>
 
-                <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
-                <p className="text-sm text-[#A1A1AA] mb-5">{plan.description}</p>
+                <h3 className="text-xl font-bold mb-1">UpFlux Pro</h3>
+                <p className="text-sm text-[#A1A1AA] mb-5">Everything you need for uptime monitoring</p>
 
                 <div className="mb-6">
-                  <span className="text-4xl font-extrabold gradient-text">${plan.price}</span>
+                  <span className="text-4xl font-extrabold gradient-text">$10</span>
                   <span className="text-[#A1A1AA] text-sm">/month</span>
                 </div>
 
                 <button
-                  onClick={() => router.push('/dashboard')}
-                  className={`w-full py-3 rounded-xl font-semibold transition-all text-sm ${plan.popular
-                    ? 'btn-gradient text-white'
-                    : 'bg-white/5 hover:bg-white/10 border border-white/10 text-white'
-                    }`}
+                  onClick={isPro ? () => router.push('/dashboard') : handleUpgrade}
+                  disabled={loading}
+                  className={`w-full py-3 rounded-xl font-semibold transition-all text-sm flex items-center justify-center ${
+                    isPro
+                      ? "bg-slate-800 hover:bg-slate-700 text-white border border-slate-700"
+                      : "btn-gradient text-white"
+                  } disabled:opacity-50`}
                 >
-                  Start Free Trial
+                  {loading
+                    ? "Processing..."
+                    : isPro
+                    ? "Current Plan (Go to Dashboard)"
+                    : "Start 1-Month Free Trial"}
                 </button>
 
                 <ul className="mt-7 space-y-3">
-                  {plan.features.map((feature, j) => (
+                  {['Unlimited Monitors', '1-minute checks', 'Unlimited team members', 'All alert channels', 'Advanced analytics', 'API access'].map((feature, j) => (
                     <li key={j} className="flex items-center gap-2.5 text-sm">
                       <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                       <span className="text-[#A1A1AA]">{feature}</span>
@@ -333,7 +377,6 @@ function App() {
                   ))}
                 </ul>
               </div>
-            ))}
           </div>
         </div>
       </section>

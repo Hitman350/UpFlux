@@ -20,6 +20,26 @@ export class AppController {
     return res.json({ status: "ok", timestamp: new Date().toISOString() });
   }
 
+  @Get("api/v1/user/me")
+  async getMe(@Req() req: Request, @Res() res: Response) {
+    const userId = req.userId;
+    if (!userId) {
+      return res
+        .status(HttpStatus.UNAUTHORIZED)
+        .json({ error: "Unauthorized" });
+    }
+
+    const user = await prismaClient.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return res.status(HttpStatus.NOT_FOUND).json({ error: "User not found" });
+    }
+
+    return res.json({ user });
+  }
+
   @Post("api/v1/website")
   async createWebsite(
     @Req() req: Request,

@@ -1,10 +1,35 @@
 "use client";
 
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from "@clerk/nextjs";
 import { Activity } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 export function Appbar() {
+    const { getToken, isLoaded, isSignedIn } = useAuth();
+    const [isPro, setIsPro] = useState(false);
+
+    useEffect(() => {
+        const fetchUserStatus = async () => {
+            if (isLoaded && isSignedIn) {
+                try {
+                    const token = await getToken();
+                    const res = await axios.get("http://localhost:8080/api/v1/user/me", {
+                        headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (res.data?.user?.plan === "PRO") {
+                        setIsPro(true);
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch user status", error);
+                }
+            }
+        };
+
+        fetchUserStatus();
+    }, [isLoaded, isSignedIn, getToken]);
+
     return (
         <nav className="fixed top-0 left-0 right-0 z-50 glass-surface border-b border-white/5">
             {/* Subtle bottom glow */}
@@ -20,6 +45,11 @@ export function Appbar() {
                         <span className="text-lg font-bold text-white tracking-tight">
                             Up<span className="text-emerald-400">Flux</span>
                         </span>
+                        {isPro && (
+                            <span className="ml-1 px-1.5 py-0.5 rounded-md bg-gradient-to-r from-amber-400 to-orange-400 text-slate-900 text-[10px] font-black tracking-wide uppercase shadow-lg shadow-amber-500/20">
+                                PRO
+                            </span>
+                        )}
                     </Link>
 
                     {/* Right side */}
