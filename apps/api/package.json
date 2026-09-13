@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "tsx watch index.ts",
     "start": "tsx index.ts",
-    "build": "tsc",
+    "build": "npx prisma generate --schema=../../packages/db/prisma/schema.prisma && tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
