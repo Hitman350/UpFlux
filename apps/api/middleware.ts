@@ -4,7 +4,9 @@ import jwt from "jsonwebtoken";
 import jwksClient from "jwks-rsa";
 
 const client = jwksClient({
-  jwksUri: "https://cuddly-newt-58.clerk.accounts.dev/.well-known/jwks.json",
+  jwksUri:
+    process.env.CLERK_JWKS_URI ??
+    "https://cuddly-newt-58.clerk.accounts.dev/.well-known/jwks.json",
   cache: true,
   rateLimit: true,
 });

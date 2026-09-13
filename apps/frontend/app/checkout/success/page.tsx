@@ -48,7 +48,7 @@ export default function SuccessPage() {
   }, [setupIntentClientSecret]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 pt-24">
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center pt-24 pb-12 px-4">
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-md w-full text-center">
         {status === "loading" && <p className="text-slate-400">Verifying your trial...</p>}
         {status === "error" && <p className="text-red-400">Something went wrong. Please try again.</p>}

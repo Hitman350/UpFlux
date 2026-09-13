@@ -311,21 +311,16 @@ This starts a PostgreSQL 16 container on `localhost:5432` with:
 
 ### 4. Configure Environment Variables
 
+Each service has its own `.env`. Do not copy the same secrets into every app.
+
 ```bash
-# Root-level (for Prisma)
-cp .env.example .env
-
-# API server
-cp apps/api/.env.example apps/api/.env   # if exists, or create manually
-
-# Validator
-cp apps/validator/.env.example apps/validator/.env  # if exists, or create manually
-
-# Frontend
-cp apps/frontend/.env.example apps/frontend/.env   # if exists, or create manually
+cp packages/db/.env.example packages/db/.env
+cp apps/api/.env.example apps/api/.env
+cp apps/frontend/.env.example apps/frontend/.env
+cp apps/validator/.env.example apps/validator/.env
 ```
 
-See [Environment Variables](#environment-variables) section for required values.
+See [Environment Variables](#environment-variables) for which keys belong where.
 
 ### 5. Generate Prisma Client & Run Migrations
 
@@ -359,12 +354,19 @@ npm run dev
 
 ## Environment Variables
 
-| Variable | Service | Description |
+Put each variable only in the service that actually reads it. Hub and API import `packages/db`, which loads `packages/db/.env` itself — they do not need their own `DATABASE_URL`.
+
+| File | Variable | Description |
 |---|---|---|
-| `DATABASE_URL` | `packages/db`, `hub`, `api` | PostgreSQL connection string (default: `postgresql://postgres:postgres@localhost:5432/upflux`) |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | `frontend` | Clerk publishable key for client-side auth |
-| `CLERK_SECRET_KEY` | `frontend` | Clerk secret key for server-side auth |
-| `PRIVATE_KEY` | `validator` | JSON-serialized Solana keypair secret key (e.g., output of `solana-keygen`) |
+| `packages/db/.env` | `DATABASE_URL` | PostgreSQL URL (default: `postgresql://postgres:postgres@localhost:5432/upflux`) |
+| `apps/frontend/.env` | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key (browser) |
+| `apps/frontend/.env` | `CLERK_SECRET_KEY` | Clerk secret key (Next.js middleware / server) |
+| `apps/frontend/.env` | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key (Checkout / Elements) |
+| `apps/api/.env` | `STRIPE_SECRET_KEY` | Stripe secret key (subscriptions, customers) |
+| `apps/api/.env` | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `apps/api/.env` | `STRIPE_PRO_PRICE_ID` | Stripe **price** id (`price_...`, not a product id) |
+| `apps/api/.env` | `CLERK_JWKS_URI` | Clerk JWKS URL for verifying JWTs |
+| `apps/validator/.env` | `PRIVATE_KEY` | JSON-serialized Solana keypair secret |
 
 ---
 
